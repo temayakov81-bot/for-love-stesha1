@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Я лечу к тебе, Стеша ❤️</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Montserrat', 'Segoe UI', sans-serif;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: all;
+            background: radial-gradient(ellipse at center, #0a0020 0%, #000 100%);
+            transition: opacity 0.5s ease;
+        }
+        #startScreen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .tattoo-container {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 80px rgba(180, 100, 255, 0.7);
+            margin-bottom: 30px;
+            animation: floatTattoo 3s ease-in-out infinite;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+        .tattoo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        @keyframes floatTattoo {
+            0%,
+            100% {
+                transform: translateY(0);
+                box-shadow: 0 0 80px rgba(180, 100, 255, 0.7);
+            }
+            50% {
+                transform: translateY(-15px);
+                box-shadow: 0 0 120px rgba(200, 150, 255, 0.9);
+            }
+        }
+        .start-title {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 300;
+            letter-spacing: 8px;
+            color: #E1BEE7;
+            text-shadow: 0 0 40px rgba(225, 190, 231, 0.6);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .start-subtitle {
+            font-size: 1rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 40px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .start-btn {
+            pointer-events: all;
+            padding: 18px 50px;
+            font-size: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 6px;
+            background: linear-gradient(135deg, rgba(171, 71, 188, 0.8), rgba(123, 31, 162, 0.8));
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            text-transform: uppercase;
+        }
+        .start-btn:hover {
+            background: linear-gradient(135deg, rgba(200, 100, 220, 0.9), rgba(150, 50, 180, 0.9));
+            box-shadow: 0 0 50px rgba(171, 71, 188, 0.6);
+            transform: scale(1.05);
+        }
+        #hud {
+            position: fixed;
+            top: 15px;
+            left: 20px;
+            right: 20px;
+            z-index: 15;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            font-family: 'Courier New', monospace;
+        }
+        .hud-item {
+            color: #E1BEE7;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(225, 190, 231, 0.6);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        #mobileHint {
+            display: none;
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            z-index: 15;
+            pointer-events: none;
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            #mobileHint {
+                display: block;
+            }
+            .tattoo-container {
+                width: 140px;
+                height: 140px;
+            }
+            .start-btn {
+                padding: 14px 35px;
+                font-size: 1rem;
+            }
+            .hud-item {
+                font-size: 0.8rem;
+                padding: 4px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="hud">
+        <span class="hud-item" id="timerDisplay">⏱ 00:30</span>
+        <span class="hud-item" id="eatCounter">🍽 0</span>
+        <span class="hud-item" id="killCounter">💥 0</span>
+    </div>
+    <div id="mobileHint">←→ влево/вправо | тап = выстрел</div>
+
+    <div id="startScreen">
+        <div class="tattoo-container">
+            <img src="https://raw.githubusercontent.com/temayakov81-bot/123/main/O6VpTsPfqYA_a07Z9zGj0xKA4ppG9TALtRNk5ctyaOWRXqISbBeksjfzxFBm5JsuHJJztwZhsLUHn0chYey880GA.jpg"
+            alt="Тату"
+            onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=width:180px;height:180px;border-radius:50%;background:linear-gradient(135deg,#7B1FA2,#E1BEE7);display:flex;align-items:center;justify-content:center;font-size:5rem;>💜</div>'">
+        </div>
+        <div class="start-title">Я лечу к тебе, Стеша</div>
+        <div class="start-subtitle">←→ управляй | ПРОБЕЛ / тап = пушка-рот<br>ешь врагов и преграды!</div>
+        <button class="start-btn" id="startBtn">🚀 ПОГНАЛИ!</button>
+    </div>
+
+    <script>
+        (function() {
+            const PHOTOS = {
+                tattoo: 'https://raw.githubusercontent.com/temayakov81-bot/123/main/O6VpTsPfqYA_a07Z9zGj0xKA4ppG9TALtRNk5ctyaOWRXqISbBeksjfzxFBm5JsuHJJztwZhsLUHn0chYey880GA.jpg',
+                stesha: 'https://raw.githubusercontent.com/temayakov81-bot/123/main/npTIjEcVjn3W7wX8rM-MB6WY_54oOd5Wh_0YldVwZqR8UEx8zDwlQMtwbkUCuqd3jSAnAfK3FiZ1-RUuCOQkfBCE.jpg',
+                together: 'https://raw.githubusercontent.com/temayakov81-bot/123/main/o4Gh-TVnfsx-yNp4bh1wLaGSxGhFFKihv06SYvn8LxJnR35PpL1jXgBwmBfTtvLOfF4yak9IlrbS-bupeq9iyD_T.jpg',
+                nikita: 'https://raw.githubusercontent.com/temayakov81-bot/123/main/tWWmg0m7gSEj8rt3xznhwU3b2LL7JrN2o0vf8hRDyBr_zAbc5DvXOFDjqIfRgiSMANLoP2ONKZ3e_WYnqftCr-H6.jpg'
+            };
+            const loadedImages = {};
+            Object.entries(PHOTOS).forEach(([k, v]) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => loadedImages[k] = img;
+                img.onerror = () => loadedImages[k] = null;
+                img.src = v;
+            });
+
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            let W, H;
+
+            function resize() {
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            let gameState = 'start';
+            let playerX, playerY;
+            const pw = 70,
+                ph = 85;
+            let obstacles = [];
+            let aliens = [];
+            let bullets = [];
+            let alienBullets = [];
+            let stars = [];
+            let nebulae = [];
+            let particles = [];
+            let hearts = [];
+            let eatEffects = [];
+            let gameTime = 0;
+            const GAME_DURATION = 30;
+            let timeLeft = GAME_DURATION;
+            let lastTime = 0;
+            let obstacleTimer = 0;
+            let alienTimer = 0;
+            let eatCount = 0;
+            let killCount = 0;
+            let arrivalProgress = 0;
+            let winAlpha = 0;
+            let steshaScale = 0;
+            let togetherScale = 0;
+            let playerLandingY = 0;
+            let shootCooldown = 0;
+
+            function createNebulae() {
+                nebulae = [];
+                for (let i = 0; i < 8; i++) {
+                    nebulae.push({
+                        x: Math.random() * W,
+                        y: Math.random() * H,
+                        size: 80 + Math.random() * 200,
+                        alpha: 0.03 + Math.random() * 0.06,
+                        color: ['rgba(180,100,255,', 'rgba(100,150,255,', 'rgba(255,120,180,',
+                            'rgba(100,255,200,'
+                        ][Math.floor(Math.random() * 4)],
+                        speed: 0.1 + Math.random() * 0.3,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+
+            function createStars() {
+                stars = [];
+                for (let i = 0; i < 250; i++) {
+                    stars.push({
+                        x: Math.random() * W,
+                        y: Math.random() * H,
+                        size: Math.random() * 2.5 + 0.5,
+                        speed: Math.random() * 2 + 0.5,
+                        opacity: Math.random() * 0.8 + 0.2,
+                        twinkle: Math.random() * Math.PI * 2,
+                        color: Math.random() < 0.1 ? '#FFD54F' : Math.random() < 0.1 ? '#80DEEA' :
+                            '#fff'
+                    });
+                }
+            }
+
+            function resetGame() {
+                playerX = W / 2 - pw / 2;
+                playerY = H - ph - 100;
+                obstacles = [];
+                aliens = [];
+                bullets = [];
+                alienBullets = [];
+                particles = [];
+                hearts = [];
+                eatEffects = [];
+                gameTime = 0;
+                timeLeft = GAME_DURATION;
+                obstacleTimer = 0;
+                alienTimer = 0;
+                eatCount = 0;
+                killCount = 0;
+                arrivalProgress = 0;
+                winAlpha = 0;
+                steshaScale = 0;
+                togetherScale = 0;
+                playerLandingY = 0;
+                shootCooldown = 0;
+                updateHUD();
+            }
+
+            createNebulae();
+            createStars();
+            resetGame();
+
+            // ========== УПРАВЛЕНИЕ ==========
+            let keys = {};
+            let touchX = null;
+            let touchActive = false;
+            let touchShoot = false;
+
+            window.addEventListener('keydown', e => {
+                keys[e.key] = true;
+                if (['ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+                if (e.key === ' ' && gameState === 'playing') shoot();
+            });
+            window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+            canvas.addEventListener('touchstart', e => {
+                e.preventDefault();
+                touchActive = true;
+                touchX = e.touches[0].clientX;
+                if (gameState === 'playing') shoot();
+            }, { passive: false });
+            canvas.addEventListener('touchmove', e => {
+                e.preventDefault();
+                if (touchActive) touchX = e.touches[0].clientX;
+            }, { passive: false });
+            canvas.addEventListener('touchend', e => {
+                e.preventDefault();
+                touchActive = false;
+                touchX = null;
+            }, { passive: false });
+            canvas.addEventListener('mousemove', e => { if (gameState === 'playing') touchX = e.clientX; });
+            canvas.addEventListener('click', () => { if (gameState === 'playing') shoot(); });
+            canvas.addEventListener('mouseleave', () => { touchX = null; });
+
+            function getInputDelta() {
+                let d = 0;
+                if (keys['ArrowLeft'] || keys['a']) d = -10;
+                if (keys['ArrowRight'] || keys['d']) d = 10;
+                if (touchActive && touchX !== null) d = (touchX - (playerX + pw / 2)) * 0.4;
+                return d;
+            }
+
+            function shoot() {
+                if (shootCooldown > 0) return;
+                shootCooldown = 0.25;
+                bullets.push({
+                    x: playerX + pw / 2 - 4,
+                    y: playerY + 10,
+                    vy: -10,
+                    size: 6,
+                    color: '#FF4081'
+                });
+                // Эффект выстрела изо рта
+                particles.push({
+                    x: playerX + pw / 2,
+                    y: playerY + 15,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: -5 - Math.random() * 3,
+                    life: 1,
+                    decay: 0.05,
+                    size: 3 + Math.random() * 4,
+                    color: 'rgba(255,100,150,1)'
+                });
+            }
+
+            // ========== СПАВН ==========
+            function spawnObstacle() {
+                const t = ['asteroid', 'comet', 'blackhole'][Math.floor(Math.random() * 3)];
+                const x = Math.random() * (W - 60);
+                const s = t === 'blackhole' ? 45 + Math.random() * 35 : 28 + Math.random() * 40;
+                obstacles.push({
+                    type: t,
+                    x,
+                    y: -s - Math.random() * 200,
+                    size: s,
+                    speed: 2 + Math.random() * 3 + gameTime * 0.1,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.04,
+                    eaten: false,
+                    eatTimer: 0,
+                    hp: t === 'blackhole' ? 3 : 1
+                });
+            }
+
+            function spawnAlien() {
+                const x = Math.random() * (W - 50);
+                aliens.push({
+                    x,
+                    y: -60,
+                    size: 35 + Math.random() * 25,
+                    speed: 1.5 + Math.random() * 2,
+                    hp: 2,
+                    shootTimer: 1 + Math.random() * 2,
+                    wiggle: Math.random() * Math.PI * 2,
+                    wiggleSpeed: 0.02 + Math.random() * 0.03,
+                    color: ['#7CFC00', '#FF4500', '#00CED1', '#FFD700'][Math.floor(Math.random() *
+                        4)]
+                });
+            }
+
+            function alienShoot(alien) {
+                alienBullets.push({
+                    x: alien.x + alien.size / 2,
+                    y: alien.y + alien.size,
+                    vy: 5,
+                    size: 4,
+                    color: '#FF1744'
+                });
+            }
+
+            function spawnEatEffect(x, y, type) {
+                const texts = ['НЯМ!', 'ХРУМ!', 'ВКУСНО!', 'МОЩЬ!', 'ГОТОВ!'];
+                eatEffects.push({
+                    x,
+                    y,
+                    text: texts[Math.floor(Math.random() * texts.length)],
+                    life: 1,
+                    vy: -2.5,
+                    size: 16 + Math.random() * 22,
+                    color: type === 'blackhole' ? '#E1BEE7' : '#FFD54F'
+                });
+                for (let i = 0; i < 12; i++) {
+                    particles.push({
+                        x,
+                        y,
+                        vx: (Math.random() - 0.5) * 7,
+                        vy: (Math.random() - 0.5) * 7 - 2,
+                        life: 1,
+                        decay: 0.03,
+                        size: 2 + Math.random() * 5,
+                        color: 'rgba(255,200,150,1)'
+                    });
+                }
+                if (Math.random() < 0.4) hearts.push({
+                    x,
+                    y,
+                    vy: -3,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    life: 1,
+                    decay: 0.01,
+                    size: 12 + Math.random() * 22
+                });
+            }
+
+            // ========== ОБНОВЛЕНИЕ ==========
+            function update(dt) {
+                if (gameState === 'start' || gameState === 'win') return;
+                const sd = Math.min(dt, 0.05);
+
+                if (shootCooldown > 0) shootCooldown -= sd;
+
+                if (gameState === 'playing') {
+                    gameTime += sd;
+                    timeLeft = Math.max(0, GAME_DURATION - gameTime);
+
+                    const delta = getInputDelta();
+                    playerX += delta;
+                    playerX = Math.max(8, Math.min(W - pw - 8, playerX));
+
+                    obstacleTimer += sd;
+                    if (obstacleTimer >= Math.max(0.2, 1.4 - gameTime * 0.04)) {
+                        obstacleTimer = 0;
+                        spawnObstacle();
+                    }
+                    alienTimer += sd;
+                    if (alienTimer >= Math.max(1.5, 4 - gameTime * 0.08)) {
+                        alienTimer = 0;
+                        spawnAlien();
+                    }
+
+                    // Препятствия
+                    for (let obs of obstacles) {
+                        if (!obs.eaten) {
+                            obs.y += obs.speed;
+                            obs.rotation += obs.rotSpeed;
+                            const hit = checkCollision(playerX, playerY, pw, ph, obs.x, obs.y, obs.size, obs
+                                .size);
+                            if (hit) {
+                                obs.hp--;
+                                if (obs.hp <= 0) {
+                                    obs.eaten = true;
+                                    obs.eatTimer = 0;
+                                    eatCount++;
+                                    spawnEatEffect(obs.x + obs.size / 2, obs.y + obs.size / 2, obs.type);
+                                } else {
+                                    spawnEatEffect(playerX + pw / 2, playerY + ph / 2, 'hit');
+                                }
+                            }
+                        } else {
+                            obs.eatTimer += sd * 5;
+                            const cx = playerX + pw / 2;
+                            const cy = playerY + 30;
+                            obs.x += (cx - (obs.x + obs.size / 2)) * 0.2;
+                            obs.y += (cy - (obs.y + obs.size / 2)) * 0.2;
+                            obs.size *= 0.88;
+                            if (obs.size < 5) obs.dead = true;
+                        }
+                    }
+                    obstacles = obstacles.filter(o => !o.dead && o.y < H + 300 && o.size > 3);
+
+                    // Инопланетяне
+                    for (let al of aliens) {
+                        al.y += al.speed;
+                        al.wiggle += al.wiggleSpeed;
+                        al.x += Math.sin(al.wiggle) * 1.5;
+                        al.shootTimer -= sd;
+                        if (al.shootTimer <= 0 && al.y > 0 && al.y < H * 0.7) {
+                            al.shootTimer = 1.5 + Math.random() * 2;
+                            alienShoot(al);
+                        }
+                        // Столкновение с игроком → съел
+                        if (checkCollision(playerX, playerY, pw, ph, al.x, al.y, al.size, al.size)) {
+                            al.dead = true;
+                            eatCount++;
+                            spawnEatEffect(al.x + al.size / 2, al.y + al.size / 2, 'alien');
+                            for (let i = 0; i < 18; i++) {
+                                particles.push({
+                                    x: al.x + al.size / 2,
+                                    y: al.y + al.size / 2,
+                                    vx: (Math.random() - 0.5) * 8,
+                                    vy: (Math.random() - 0.5) * 8,
+                                    life: 1,
+                                    decay: 0.03,
+                                    size: 3 + Math.random() * 6,
+                                    color: 'rgba(100,255,100,1)'
+                                });
+                            }
+                        }
+                    }
+                    aliens = aliens.filter(a => !a.dead && a.y < H + 100);
+
+                    // Пули игрока
+                    for (let b of bullets) {
+                        b.y += b.vy;
+                        // Попадание в препятствие
+                        for (let obs of obstacles) {
+                            if (!obs.eaten && pointInCircle(b.x, b.y, obs.x + obs.size / 2, obs.y + obs.size / 2,
+                                    obs.size / 2)) {
+                                obs.hp--;
+                                b.dead = true;
+                                if (obs.hp <= 0) {
+                                    obs.eaten = true;
+                                    obs.eatTimer = 0;
+                                    killCount++;
+                                    spawnEatEffect(obs.x + obs.size / 2, obs.y + obs.size / 2, 'shot');
+                                }
+                                break;
+                            }
+                        }
+                        // Попадание в пришельца
+                        for (let al of aliens) {
+                            if (!al.dead && pointInCircle(b.x, b.y, al.x + al.size / 2, al.y + al.size / 2, al
+                                    .size / 2)) {
+                                al.hp--;
+                                b.dead = true;
+                                if (al.hp <= 0) {
+                                    al.dead = true;
+                                    killCount++;
+                                    for (let i = 0; i < 15; i++) {
+                                        particles.push({
+                                            x: al.x + al.size / 2,
+                                            y: al.y + al.size / 2,
+                                            vx: (Math.random() - 0.5) * 7,
+                                            vy: (Math.random() - 0.5) * 7,
+                                            life: 1,
+                                            decay: 0.035,
+                                            size: 2 + Math.random() * 5,
+                                            color: 'rgba(255,200,50,1)'
+                                        });
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    bullets = bullets.filter(b => !b.dead && b.y > -20);
+
+                    // Пули пришельцев
+                    for (let ab of alienBullets) {
+                        ab.y += ab.vy;
+                        if (checkCollision(playerX, playerY, pw, ph, ab.x - ab.size, ab.y - ab.size, ab.size * 2,
+                                ab.size * 2)) {
+                            ab.dead = true;
+                            // Попадание в игрока — просто эффект, не умираем
+                            for (let i = 0; i < 8; i++) {
+                                particles.push({
+                                    x: playerX + pw / 2,
+                                    y: playerY + ph / 2,
+                                    vx: (Math.random() - 0.5) * 5,
+                                    vy: (Math.random() - 0.5) * 5,
+                                    life: 1,
+                                    decay: 0.04,
+                                    size: 2 + Math.random() * 3,
+                                    color: 'rgba(255,50,50,1)'
+                                });
+                            }
+                        }
+                    }
+                    alienBullets = alienBullets.filter(ab => !ab.dead && ab.y < H + 20);
+
+                    if (timeLeft <= 0) {
+                        gameState = 'arriving';
+                        arrivalProgress = 0;
+                        winAlpha = 0;
+                        steshaScale = 0;
+                        togetherScale = 0;
+                        playerLandingY = playerY;
+                        obstacles = [];
+                        aliens = [];
+                        bullets = [];
+                        alienBullets = [];
+                    }
+                }
+
+                // Прибытие
+                if (gameState === 'arriving') {
+                    arrivalProgress += sd;
+                    if (arrivalProgress < 1.0) {
+                        playerY += (H * 0.18 - playerY) * 0.03;
+                        playerX += (W / 2 - pw / 2 - playerX) * 0.04;
+                    } else if (arrivalProgress < 2.5) {
+                        steshaScale = Math.min(1, (arrivalProgress - 1.0) / 1.0);
+                        playerY += (H * 0.22 - playerY) * 0.02;
+                    } else if (arrivalProgress < 3.8) {
+                        togetherScale = Math.min(1, (arrivalProgress - 2.5) / 1.0);
+                    } else {
+                        winAlpha = Math.min(1, winAlpha + sd * 0.7);
+                        if (winAlpha >= 1 && arrivalProgress > 5.0) gameState = 'win';
+                    }
+                }
+
+                // Частицы и эффекты
+                for (let p of particles) { p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= p.decay; }
+                particles = particles.filter(p => p.life > 0);
+                for (let e of eatEffects) { e.y += e.vy;
+                    e.life -= 0.018; }
+                eatEffects = eatEffects.filter(e => e.life > 0);
+                for (let h of hearts) { h.y += h.vy;
+                    h.x += h.vx;
+                    h.life -= h.decay; }
+                hearts = hearts.filter(h => h.life > 0);
+
+                updateHUD();
+            }
+
+            function checkCollision(ax, ay, aw, ah, bx, by, bw, bh) {
+                const m = 15;
+                return ax + m < bx + bw - m && ax + aw - m > bx + m && ay + m < by + bh - m && ay + ah - m > by + m;
+            }
+
+            function pointInCircle(px, py, cx, cy, r) { return (px - cx) ** 2 + (py - cy) ** 2 < r ** 2; }
+
+            function updateHUD() {
+                document.getElementById('timerDisplay').textContent = '⏱ ' + String(Math.ceil(timeLeft)).padStart(2,
+                    '0') + ' сек';
+                document.getElementById('eatCounter').textContent = '🍽 ' + eatCount;
+                document.getElementById('killCounter').textContent = '💥 ' + killCount;
+                const hint = document.getElementById('mobileHint');
+                hint.style.display = (gameState === 'playing' && W <= 768) ? 'block' : 'none';
+            }
+
+            // ========== ОТРИСОВКА ==========
+            function drawNebulae() {
+                for (let n of nebulae) {
+                    n.phase += 0.005;
+                    const alpha = n.alpha * (0.7 + 0.3 * Math.sin(n.phase));
+                    const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.size);
+                    grad.addColorStop(0, n.color + alpha + ')');
+                    grad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    n.y += n.speed;
+                    if (n.y > H + n.size) { n.y = -n.size;
+                        n.x = Math.random() * W; }
+                }
+            }
+
+            function drawStars() {
+                for (let s of stars) {
+                    s.twinkle += 0.02;
+                    const alpha = s.opacity * (0.6 + 0.4 * Math.sin(s.twinkle));
+                    ctx.fillStyle = s.color.replace(')', `,${alpha})`).replace('rgb', 'rgba');
+                    if (s.color === '#fff') ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    s.y += s.speed;
+                    if (s.y > H + 5) { s.y = -5;
+                        s.x = Math.random() * W; }
+                }
+            }
+
+            function drawPlayer() {
+                if (gameState === 'arriving' && arrivalProgress > 2.5 && steshaScale > 0.7) return;
+                ctx.save();
+                const px = playerX;
+                const py = playerY;
+
+                // Огонь
+                const fg = ctx.createLinearGradient(px + pw / 2, py + ph, px + pw / 2, py + ph + 45);
+                fg.addColorStop(0, '#FF9800');
+                fg.addColorStop(0.5, '#FF5722');
+                fg.addColorStop(1, 'transparent');
+                ctx.fillStyle = fg;
+                ctx.beginPath();
+                ctx.moveTo(px + 6, py + ph);
+                ctx.lineTo(px + pw / 2, py + ph + 38 + Math.random() * 14);
+                ctx.lineTo(px + pw - 6, py + ph);
+                ctx.fill();
+
+                // Корпус с фото
+                if (loadedImages['nikita']) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(px + pw / 2, py + 30, 27, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(loadedImages['nikita'], px + pw / 2 - 27, py + 3, 54, 54);
+                    ctx.restore();
+                    ctx.strokeStyle = '#B0BEC5';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(px + pw / 2, py + 30, 28, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = '#E1BEE7';
+                    ctx.beginPath();
+                    ctx.arc(px + pw / 2, py + 30, 27, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Крылья
+                ctx.fillStyle = '#78909C';
+                ctx.beginPath();
+                ctx.moveTo(px + pw / 2, py + 16);
+                ctx.lineTo(px - 10, py + 55);
+                ctx.lineTo(px + 6, py + 47);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(px + pw / 2, py + 16);
+                ctx.lineTo(px + pw + 10, py + 55);
+                ctx.lineTo(px + pw - 6, py + 47);
+                ctx.fill();
+
+                // Пушка-рот (открыт)
+                const mouthOpen = shootCooldown > 0.15 || eatEffects.length > 0;
+                ctx.fillStyle = mouthOpen ? '#FF5252' : '#D32F2F';
+                ctx.beginPath();
+                const mouthSize = mouthOpen ? 14 + Math.random() * 3 : 8;
+                ctx.arc(px + pw / 2, py + 50, mouthSize, 0, Math.PI);
+                ctx.fill();
+                if (mouthOpen) {
+                    ctx.fillStyle = '#FFEB3B';
+                    ctx.beginPath();
+                    ctx.arc(px + pw / 2, py + 46, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+
+            function drawObstacles() {
+                for (let obs of obstacles) {
+                    if (obs.eaten && obs.eatTimer > 0.8) continue;
+                    ctx.save();
+                    ctx.translate(obs.x + obs.size / 2, obs.y + obs.size / 2);
+                    ctx.rotate(obs.rotation);
+                    const alpha = obs.eaten ? (1 - obs.eatTimer) : 1;
+                    ctx.globalAlpha = alpha;
+
+                    if (obs.type === 'asteroid') {
+                        const g = ctx.createRadialGradient(0, 0, obs.size * 0.05, 0, 0, obs.size / 2);
+                        g.addColorStop(0, '#B0A090');
+                        g.addColorStop(1, '#5D4037');
+                        ctx.fillStyle = g;
+                        ctx.beginPath();
+                        const sp = 8;
+                        for (let i = 0; i < sp; i++) {
+                            const a = (i / sp) * Math.PI * 2;
+                            const r = obs.size / 2 * (0.7 + 0.3 * Math.sin(i * 3));
+                            i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.lineTo(Math.cos(a) * r, Math
+                                .sin(a) * r);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    } else if (obs.type === 'comet') {
+                        const g = ctx.createRadialGradient(0, 0, obs.size * 0.05, 0, 0, obs.size / 2);
+                        g.addColorStop(0, '#FFF9C4');
+                        g.addColorStop(0.5, '#FF8A65');
+                        g.addColorStop(1, '#BF360C');
+                        ctx.fillStyle = g;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, obs.size / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = 'rgba(255,200,150,0.4)';
+                        ctx.beginPath();
+                        ctx.moveTo(-obs.size / 2, 0);
+                        ctx.lineTo(-obs.size * 1.3, -obs.size * 0.5);
+                        ctx.lineTo(-obs.size * 1.3, obs.size * 0.5);
+                        ctx.fill();
+                    } else {
+                        const g = ctx.createRadialGradient(0, 0, obs.size * 0.02, 0, 0, obs.size / 2);
+                        g.addColorStop(0, '#000');
+                        g.addColorStop(0.5, '#1A0030');
+                        g.addColorStop(1, 'rgba(120,0,200,0.3)');
+                        ctx.fillStyle = g;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, obs.size / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = 'rgba(180,50,255,0.6)';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+            }
+
+            function drawAliens() {
+                for (let al of aliens) {
+                    ctx.save();
+                    ctx.translate(al.x + al.size / 2, al.y + al.size / 2);
+                    // Тело
+                    ctx.fillStyle = al.color;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, al.size / 2, al.size / 2 * 1.2, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Глаза
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(-al.size * 0.2, -al.size * 0.2, al.size * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(al.size * 0.2, -al.size * 0.2, al.size * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(-al.size * 0.2, -al.size * 0.2, al.size * 0.1, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(al.size * 0.2, -al.size * 0.2, al.size * 0.1, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Антенны
+                    ctx.strokeStyle = al.color;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(-al.size * 0.15, -al.size * 0.5);
+                    ctx.lineTo(-al.size * 0.3, -al.size * 0.8);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(al.size * 0.15, -al.size * 0.5);
+                    ctx.lineTo(al.size * 0.3, -al.size * 0.8);
+                    ctx.stroke();
+                    ctx.fillStyle = '#FFD54F';
+                    ctx.beginPath();
+                    ctx.arc(-al.size * 0.3, -al.size * 0.8, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(al.size * 0.3, -al.size * 0.8, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            function drawBullets() {
+                for (let b of bullets) {
+                    ctx.fillStyle = b.color;
+                    ctx.shadowColor = b.color;
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+                for (let ab of alienBullets) {
+                    ctx.fillStyle = ab.color;
+                    ctx.shadowColor = ab.color;
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.arc(ab.x, ab.y, ab.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+
+            function drawEatEffects() {
+                for (let e of eatEffects) {
+                    ctx.fillStyle = e.color.replace(')', `,${e.life})`);
+                    ctx.font = `bold ${e.size}px 'Montserrat', sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(e.text, e.x, e.y);
+                }
+            }
+
+            function drawParticles() {
+                for (let p of particles) {
+                    ctx.fillStyle = p.color.replace('1)', `${p.life})`);
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function drawHearts() {
+                for (let h of hearts) {
+                    ctx.fillStyle = `rgba(255,120,160,${h.life})`;
+                    ctx.font = `${h.size}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('❤️', h.x, h.y);
+                }
+            }
+
+            function drawArrivalSequence() {
+                // Корабль прилетает (в верхней части)
+                if (arrivalProgress < 2.5) {
+                    drawPlayer();
+                }
+
+                // Портал-вспышка
+                if (arrivalProgress > 0.3 && arrivalProgress < 1.2) {
+                    const cx = W / 2;
+                    const cy = H * 0.2;
+                    const pr = arrivalProgress * 150;
+                    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, pr);
+                    grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+                    grad.addColorStop(0.5, 'rgba(200,150,255,0.5)');
+                    grad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, pr, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Фото Стеши
+                if (steshaScale > 0 && loadedImages['stesha']) {
+                    const isz = Math.min(W * 0.42, H * 0.32, 260);
+                    const ix = W / 2 - isz / 2;
+                    const iy = H * 0.14;
+                    ctx.save();
+                    ctx.globalAlpha = steshaScale;
+                    ctx.beginPath();
+                    ctx.arc(W / 2, iy + isz / 2, isz / 2, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(loadedImages['stesha'], ix, iy, isz, isz);
+                    ctx.restore();
+                    if (steshaScale >= 0.9) {
+                        ctx.strokeStyle = `rgba(225,190,231,${steshaScale})`;
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(W / 2, iy + isz / 2, isz / 2 + 2, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+
+                // Совместное фото
+                if (togetherScale > 0 && loadedImages['together']) {
+                    const ssz = 120;
+                    const sx = W / 2 - ssz / 2;
+                    const sy = H * 0.6;
+                    ctx.save();
+                    ctx.globalAlpha = togetherScale;
+                    ctx.beginPath();
+                    ctx.arc(W / 2, sy + ssz / 2, ssz / 2, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(loadedImages['together'], sx, sy, ssz, ssz);
+                    ctx.restore();
+                    if (togetherScale >= 0.9) {
+                        ctx.strokeStyle = `rgba(255,138,128,${togetherScale})`;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(W / 2, sy + ssz / 2, ssz / 2 + 1, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+
+                // Текст
+                if (winAlpha > 0) {
+                    ctx.globalAlpha = winAlpha;
+                    ctx.fillStyle = '#fff';
+                    ctx.font = `300 ${Math.min(W*0.04,28)}px 'Montserrat', sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Я ДОЛЕТЕЛ ДО ТЕБЯ!', W / 2, H * 0.5);
+                    ctx.fillStyle = '#E1BEE7';
+                    ctx.font = `300 ${Math.min(W*0.03,19)}px 'Montserrat', sans-serif`;
+                    ctx.fillText('Стеша, мою любовь не измерить', W / 2, H * 0.55);
+                    ctx.fillText('ни глубиной, ни метром, ни космосом', W / 2, H * 0.6);
+                    ctx.font = `${Math.min(W*0.07,45)}px sans-serif`;
+                    ctx.fillText('❤️', W / 2, H * 0.8);
+                    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                    ctx.font = `300 ${Math.min(W*0.025,15)}px 'Montserrat', sans-serif`;
+                    ctx.fillText('навсегда твой, Никита', W / 2, H * 0.88);
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+            // ========== ГЛАВНЫЙ ЦИКЛ ==========
+            function gameLoop(ts) {
+                if (!lastTime) lastTime = ts;
+                let dt = (ts - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.1;
+                lastTime = ts;
+
+                update(dt);
+                ctx.clearRect(0, 0, W, H);
+
+                const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+                bgGrad.addColorStop(0, '#000015');
+                bgGrad.addColorStop(0.5, '#0a0020');
+                bgGrad.addColorStop(1, '#000010');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, W, H);
+
+                drawNebulae();
+                drawStars();
+
+                if (gameState === 'arriving' || gameState === 'win') {
+                    drawParticles();
+                    drawHearts();
+                    drawArrivalSequence();
+                } else if (gameState === 'playing') {
+                    drawObstacles();
+                    drawAliens();
+                    drawBullets();
+                    drawPlayer();
+                    drawParticles();
+                    drawHearts();
+                    drawEatEffects();
+                }
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            document.getElementById('startBtn').addEventListener('click', () => {
+                document.getElementById('startScreen').classList.add('hidden');
+                resetGame();
+                gameState = 'playing';
+                lastTime = performance.now();
+            });
+
+            canvas.addEventListener('click', () => {
+                if (gameState === 'win') {
+                    resetGame();
+                    gameState = 'playing';
+                    lastTime = performance.now();
+                }
+            });
+
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        })();
+    </script>
+</body>
+</html>
